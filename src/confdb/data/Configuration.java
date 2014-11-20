@@ -197,6 +197,12 @@ public class Configuration implements IConfiguration
 	return (configInfo!=null) ? configInfo.lockedByUser() : new String();
     }
 
+    /** check if the configuration is read-only */
+    public boolean isReadOnly()
+    {
+        return (configInfo!=null) ? configInfo.isReadOnly() : false;
+    }
+
     /** database identifier */
     public int dbId() { return (configInfo!=null) ? configInfo.dbId() : -1; }
 

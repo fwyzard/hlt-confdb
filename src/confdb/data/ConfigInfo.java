@@ -36,7 +36,10 @@ public class ConfigInfo implements Comparable<ConfigInfo>, Serializable
 
     /** user who is currently locking this configuration */
     private String lockedByUser = "";
-    
+
+    /** normal developers should not be allowed to edit configrations under /dev */
+    private boolean readOnly = false;
+
 
     //
     // construction
@@ -180,6 +183,15 @@ public class ConfigInfo implements Comparable<ConfigInfo>, Serializable
     
     /** unlock this configuration and all its versions */
     public void unlock() { this.lockedByUser = ""; }
+
+    /** check if the configuration is read-only */
+    public boolean isReadOnly() { return readOnly; }
+
+    /** mark the configuration as read-only */
+    public void setReadOnly() { this.readOnly = true; }
+
+    /** mark the configuration as read-write */
+    public void setReadWrite() { this.readOnly = false; }
 
     /** add an new version of this configuration */
     public void addVersion(int dbId,int version,

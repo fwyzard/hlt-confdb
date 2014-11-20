@@ -63,6 +63,10 @@ public class DirectoryTreeCellRenderer extends DefaultTreeCellRenderer
 		setIcon(lockedConfigIcon);
 		setText("<html>"+getText() +
 			" <font color=#ff0000>LOCKED</font></html>");
+	    } else if (configInfo.isReadOnly()) {
+		setIcon(lockedConfigIcon);
+		setText("<html>"+getText() +
+			" <font color=#ff0000>READ-ONLY</font></html>");
 	    }
 	}
 	

@@ -616,7 +616,7 @@ public class ConfDbGUI
 	    if (answer==1) return false;
 	}
 	
-	if (!currentConfig.isLocked()&&currentConfig.version()>0) {
+	if (! currentConfig.isLocked() && ! currentConfig.isReadOnly() && currentConfig.version() > 0) {
 	    try { database.unlockConfiguration(currentConfig); }
 	    catch (DatabaseException e) { System.err.println(e.getMessage()); }
 	}
@@ -629,8 +629,8 @@ public class ConfDbGUI
     /** save a new version of the current configuration */
     public void saveConfiguration(boolean askForComment)
     {
-	if (currentConfig.isEmpty()||!currentConfig.hasChanged()||
-	    currentConfig.isLocked()||!checkConfiguration()) return;	
+	if (currentConfig.isEmpty() || ! currentConfig.hasChanged() ||
+	    currentConfig.isLocked() || currentConfig.isReadOnly() || ! checkConfiguration()) return;
 	
 	if (currentConfig.version()==0) {
 	    saveAsConfiguration();
@@ -1610,6 +1610,11 @@ public class ConfDbGUI
 	    jLabelLock.setToolTipText("locked by user " +
 				      currentConfig.lockedByUser());
 	}
+	else if (currentConfig.isReadOnly()) {
+	    jLabelLock.setIcon(new ImageIcon(getClass().
+					     getResource("/LockedIcon.png")));
+	    jLabelLock.setToolTipText("read-only");
+	}
 	else {
 	    jLabelLock.setIcon(new ImageIcon(getClass().
 					     getResource("/UnlockedIcon.png")));
@@ -1997,7 +2002,17 @@ public class ConfDbGUI
 				JOptionPane.showMessageDialog(frame,msg,"READ ONLY!",
 							      JOptionPane.WARNING_MESSAGE,
 							      null);
-			 } else {
+                    } else if (currentConfig.isReadOnly()) {
+				jTreeCurrentConfig.setEditable(false);
+				jTreeTableParameters.getTree().setEditable(false);
+				String msg =
+				    "The configuration "+currentConfig.toString()+
+				    " is read-only.\n"+
+				    "You cannot modify it, but you can save a copy in your user area.";
+				JOptionPane.showMessageDialog(frame,msg,"READ ONLY!",
+							      JOptionPane.WARNING_MESSAGE,
+							      null);
+		    } else {
 				jTreeCurrentConfig.setEditable(true);
 				jTreeTableParameters.getTree().setEditable(true);
 				try {
@@ -2008,7 +2023,7 @@ public class ConfDbGUI
 								  "Failed to lock configuration",
 								  JOptionPane.ERROR_MESSAGE,null);
 				}
-			 }	    	
+		    }
 	    }
 
 	}
