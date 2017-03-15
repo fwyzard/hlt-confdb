@@ -379,24 +379,18 @@ public class JPythonParser
     //      - SelectEvent: definition of the Stream.
     // TODO: What to do if we generate extra things when parsing streams?
     private boolean parseModule(PyObject moduleObject) {
-
         String type  = getType(moduleObject);
         String label = getLabel(moduleObject);
+        String moduleClass = convert(moduleObject.invoke("type_"), String.class);
 
-        if (type == "OutputModule") {
+        if (type == "OutputModule" &&
+            (moduleClass == "PoolOutputModule" || moduleClass == "EvFOutputModule" || moduleClass == "ShmStreamConsumer")
+        ) {
             OutputModule module = configuration.output(label);
-
-            if (module != null) {
-                PyDictionary parameterContainerObject = (PyDictionary) moduleObject.invoke("parameters_");
-                updateOutputModuleParameters(parameterContainerObject, module);
-            } else {
-                // System.err.println("ERROR: Output module not found. Cannot be updated.");
-                // NOTE: In principal this is not an error. This must generate the real Streams/EventContents/OutputModules.
-
-                // we will generate the stream, EV and OM, from the label.
+            if (module == null) {
+                // generate the stream, EV and OM, from the label.
 
                 String streamName = label;
-                // fixing the OM name:
                 String prefix = "hltOutput"; // Used prefix for OutputModules.
                 if (streamName.startsWith(prefix)) streamName = streamName.substring(prefix.length());
 
@@ -404,15 +398,11 @@ public class JPythonParser
                 EventContent content = configuration.insertContent(contentName);
                 Stream stream = new Stream(streamName, content);
                 stream = content.insertStream(streamName);
-
-                // Recursively calling this function MUST Update the recently created OutputModule.
-                parseModule(moduleObject);
             }
-
+            PyDictionary parameterContainerObject = (PyDictionary) moduleObject.invoke("parameters_");
+            updateOutputModuleParameters(parameterContainerObject, module);
         } else {
-            String moduleClass = convert(moduleObject.invoke("type_"), String.class);
             ModuleInstance module = configuration.insertModule(moduleClass, label);
-            //TODO: Update module with file values?
             PyDictionary parameterContainerObject = (PyDictionary) moduleObject.invoke("parameters_");
             updateModuleParameters(parameterContainerObject, module);
         }
@@ -889,7 +879,7 @@ public class JPythonParser
                     module.findParameter(parameterName).setTracked(tracked);
                 } else alert(msg.err, "[parseParameter] parameter not VectorParameter! " + parameterName);
             } else alert(msg.err, "[parseParameter] "+type+" parameter '" + parameterName + "' not found! at Module '" + module.name() +"'");
-        } 
+        }
         else if ("double" == type)
         {
             String svalue = value.toString();
@@ -1111,7 +1101,7 @@ public class JPythonParser
 
     // Parse sequence/path content:
     private void parseReferenceContainerContent(PyObject sequenceContent, confdb.data.ReferenceContainer parentContainer) {
-        PyList collection = (PyList) sequenceContent.__getattr__("_collection"); 
+        PyList collection = (PyList) sequenceContent.__getattr__("_collection");
         for (Object object: collection) {
             PyObject element = (PyObject) object;
             String type  = getType(element);
