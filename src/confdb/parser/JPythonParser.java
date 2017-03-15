@@ -318,7 +318,6 @@ public class JPythonParser
     private void parseEDSource(PyObject pydict) {
         String type  = getType(pydict);
         String label = getLabel(pydict);
-
         String moduleClass = convert(pydict.invoke("type_"), String.class);
 
         //ModuleInstance module = configuration.insertModule(moduleClass, label);
@@ -361,7 +360,6 @@ public class JPythonParser
         alert(msg.inf, " PSets (" + pydict.size() + ")");
         for (Object o : pydict.entrySet()) {
             PyDictionary.Entry<String, PyObject> moduleObject = (PyDictionary.Entry<String, PyObject>) o;
-
             parsePSet(moduleObject.getValue());
         }
     }
@@ -381,26 +379,31 @@ public class JPythonParser
     private boolean parseModule(PyObject moduleObject) {
         String type  = getType(moduleObject);
         String label = getLabel(moduleObject);
-        String moduleClass = convert(moduleObject.invoke("type_"), String.class);
+        String moduleClass = moduleObject.invoke("type_").toString();
 
-        if (type == "OutputModule" &&
-            (moduleClass == "PoolOutputModule" || moduleClass == "EvFOutputModule" || moduleClass == "ShmStreamConsumer")
-        ) {
-            OutputModule module = configuration.output(label);
-            if (module == null) {
-                // generate the stream, EV and OM, from the label.
+        if (type == "OutputModule") {
+            // XXX WTF
+            // Skipping OutputModule "hltOutputPhysicsEGamma" of unsupported type "PoolOutputModule"
+            if (moduleClass.equals("PoolOutputModule") || moduleClass.equals("EvFOutputModule") || moduleClass.equals("ShmStreamConsumer"))
+            {
+                OutputModule module = configuration.output(label);
+                if (module == null) {
+                    // generate the stream, EV and OM, from the label.
 
-                String streamName = label;
-                String prefix = "hltOutput"; // Used prefix for OutputModules.
-                if (streamName.startsWith(prefix)) streamName = streamName.substring(prefix.length());
+                    String streamName = label;
+                    String prefix = "hltOutput"; // Used prefix for OutputModules.
+                    if (streamName.startsWith(prefix)) streamName = streamName.substring(prefix.length());
 
-                String contentName = "hltEventContent" + streamName; // convention.
-                EventContent content = configuration.insertContent(contentName);
-                Stream stream = new Stream(streamName, content);
-                stream = content.insertStream(streamName);
+                    String contentName = "hltEventContent" + streamName; // convention.
+                    EventContent content = configuration.insertContent(contentName);
+                    Stream stream = new Stream(streamName, content);
+                    stream = content.insertStream(streamName);
+                }
+                PyDictionary parameterContainerObject = (PyDictionary) moduleObject.invoke("parameters_");
+                updateOutputModuleParameters(parameterContainerObject, module);
+            } else {
+                alert(msg.war, "Skipping OutputModule \"" + label + "\" of unsupported type \"" + moduleClass  + "\"");
             }
-            PyDictionary parameterContainerObject = (PyDictionary) moduleObject.invoke("parameters_");
-            updateOutputModuleParameters(parameterContainerObject, module);
         } else {
             ModuleInstance module = configuration.insertModule(moduleClass, label);
             PyDictionary parameterContainerObject = (PyDictionary) moduleObject.invoke("parameters_");
@@ -988,7 +991,7 @@ public class JPythonParser
         }
         else
         {
-            alert(msg.war, "[parseParameter] TYPE: [unsupported] " + type);
+            alert(msg.war, "[parseParameter] the parameter \"" + parameterName + "\" is of an unsupported type \"" + type + "\"");
         }
 
     }
@@ -1018,7 +1021,7 @@ public class JPythonParser
                 EventContent ec = ps.parentContent();
 
                 if (parameterName.compareTo("outputCommands") == 0) {
-                    PyList parameterList= (PyList) value;
+                    PyList parameterList = (PyList) value;
                     for (int i=0; i < parameterList.size(); i++) {
                         // update eventContent:
                         OutputCommand outputCommand = new OutputCommand();
@@ -1048,7 +1051,7 @@ public class JPythonParser
                 } else alert(msg.err, "[parseOutputModuleParameter] SelectEvents not found! " + parameterName);
             }
         } else {
-            alert(msg.war, "[parseParameter] TYPE "+ type +" unsupported");
+            alert(msg.war, "[parseOutputModuleParameter] the parameter \"" + parameterName + "\" is of an unsupported type \"" + type + "\"");
         }
 
     }
