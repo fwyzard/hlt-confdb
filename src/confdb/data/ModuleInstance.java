@@ -18,9 +18,6 @@ public class ModuleInstance extends Instance implements Referencable
     // data members
     //
     
-    /** database ID */
-    private int databaseId = 0;
-    
     /** list of references */
     private ArrayList<ModuleReference> references =
 	new ArrayList<ModuleReference>();
